@@ -160,8 +160,11 @@ def strip_final_punct(input):
         output = input
     print(output)
     return output
+def prepender(input):
+    return '0' + input
 class query:
     def __init__(self , token):
+        prepender = lambda a: '0' + a
         self.token = token
         self.name = 'query'
         self.timestamp = str(datetime.datetime.now())
@@ -171,26 +174,42 @@ class query:
     def get(self , id , mode):
         output = True
         print('get full record')
+        id_list = []
         headers = {'Authorization': 'Bearer ' + self.token}
-        URL = urls['base']+ urls['ver'] + urls['get'] + id
-        print('submit url: ' + URL)
-        result = requests.get(URL, headers=headers).json()
-        if 'error' in result:
-            output = False
-            self.errors += 'error in function get_full: record not retrieved\n'
+        print(headers)
+        if type(id) is str:
+            id_list.append(id)
+        elif type(id) is list:
+            id_list = id
         else:
-            if mode == 'a': # append results
-                self.results.append(result)
-            elif mode == 'r': # replace results
-                self.results = []
-                self.results.append(result)
-            else:
+            self.errors += 'error in function get: "id" is unexpected type'
+            output = False
+            return output
+        print(id_list)
+        for item in id_list:
+            while len(item) < 9:
+                item = prepender(item)
+            print('item id: '+item)
+            URL = urls['base']+ urls['ver'] + urls['get'] + item
+            print('submit url: ' + URL)
+            result = requests.get(URL, headers=headers).json()
+            if 'error' in result:
                 output = False
-                self.errors += 'error in function get_full: incorrect mode specified (must be "a" or "r")\n'
+                self.errors += 'error in function get: record ' + item + ' not retrieved\n'
+            else:
+                if mode == 'a': # append results
+                    self.results.append(result)
+                elif mode == 'r': # replace results
+                    self.results = []
+                    self.results.append(result)
+                else:
+                    output = False
+                    self.errors += 'error in function get_full: incorrect mode specified (must be "a" or "r")\n'
         return output
     def get_fields(self , id, fields_to_get , mode):
         output = True
         field_list = []
+        id_list = []
         print('get specified fields')
         if type(fields_to_get) is str:
             field_list.append(fields_to_get)
@@ -206,24 +225,38 @@ class query:
                 self.errors += 'error in function get_fields: "fields" value ("' + field + '") does not match available fields'
                 return output
         headers = {'Authorization': 'Bearer ' + self.token}
-        URL = urls['base'] + urls['ver'] + urls['get'] + id
-        result = requests.get(URL, headers=headers).json()
-        if 'error' in result:
-            output = False
-            self.errors += 'error in function get_full: record not retrieved\n'
+        print(headers)
+        if type(id) is str:
+            id_list.append(id)
+        elif type(id) is list:
+            id_list = id
         else:
-            result_set = []
-            for key in field_list:
-                new_entry = {key : result[key]}
-                result_set.append(new_entry)
-            if mode == 'a': # append results
-                self.results.append([result_set])
-            elif mode == 'r': # replace results
-                self.results = []
-                self.results.append([result_set])
-            else:
+            self.errors += 'error in function get_fields: "id" is unexpected type'
+            output = False
+            return output
+        print('yo')
+        for item in id:
+            while len(item) < 9:
+                print(len)
+                prepender(item)
+            URL = urls['base'] + urls['ver'] + urls['get'] + item
+            result = requests.get(URL, headers=headers).json()
+            if 'error' in result:
                 output = False
-                self.errors += 'error in function get_full: incorrect mode specified (must be "a" or "r")\n'
+                self.errors += 'error in function get_full: record ' + item + ' not retrieved\n'
+            else:
+                result_set = []
+                for key in field_list:
+                    new_entry = {key : result[key]}
+                    result_set.append(new_entry)
+                if mode == 'a': # append results
+                    self.results.append([result_set])
+                elif mode == 'r': # replace results
+                    self.results = []
+                    self.results.append([result_set])
+                else:
+                    output = False
+                    self.errors += 'error in function get_full: incorrect mode specified (must be "a" or "r")\n'
         return output
     def write_results_sheet(self , filename, fields, column_headers, depunctuate):
         # writes results to file in rectangular format
