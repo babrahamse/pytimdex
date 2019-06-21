@@ -65,6 +65,7 @@ isbd_fields = [
         'title',
         'edition',
         'imprint',
+        'publication_date',
         'physical_description',
         'notes',
         'authors',
@@ -160,6 +161,9 @@ def strip_final_punct(input):
         output = input
     print(output)
     return output
+def reduce_isbn(input):
+    # need to build this into pt
+    pass
 def prepender(input):
     return '0' + input
 class query:
@@ -171,7 +175,7 @@ class query:
         self.queries = []
         self.results = []
         self.errors = ''
-    def get(self , id , mode):
+    def get(self , id , mode='r'):
         output = True
         print('get full record')
         id_list = []
@@ -199,9 +203,11 @@ class query:
             else:
                 if mode == 'a': # append results
                     self.results.append(result)
+                    return result
                 elif mode == 'r': # replace results
                     self.results = []
                     self.results.append(result)
+                    return result
                 else:
                     output = False
                     self.errors += 'error in function get_full: incorrect mode specified (must be "a" or "r")\n'
